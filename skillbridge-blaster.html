@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Invaders</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            padding: 20px;
+        }
+        
+        .game-container {
+            width: 800px;
+            max-width: 95%;
+            position: relative;
+            background: #0d1b2a;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 3px solid #3498db;
+        }
+        
+        .game-header {
+            background: #1d2d50;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .score-container, .lives-container, .level-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .score-label, .lives-label, .level-label {
+            font-size: 14px;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+        
+        .score-value, .lives-value, .level-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .game-screen {
+            position: relative;
+            height: 500px;
+            overflow: hidden;
+        }
+        
+        #player {
+            position: absolute;
+            bottom: 20px;
+            left: 375px;
+            width: 50px;
+            height: 30px;
+            background: linear-gradient(to right, #3498db, #1abc9c);
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
+            z-index: 10;
+        }
+        
+        .knowledge-invader {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #e74c3c, #f39c12);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 28px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
+            z-index: 5;
+        }
+        
+        .knowledge-invader:hover {
+            transform: scale(1.1);
+        }
+        
+        #bullet {
+            position: absolute;
+            width: 5px;
+            height: 15px;
+            background: linear-gradient(to top, #2ecc71, #1abc9c);
+            border-radius: 2px;
+            display: none;
+            box-shadow: 0 0 5px rgba(46, 204, 113, 0.8);
+            z-index: 8;
+        }
+        
+        .question-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(29, 45, 80, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            width: 80%;
+            max-width: 500px;
+            z-index: 20;
+            display: none;
+            border: 2px solid #3498db;
+        }
+        
+        .question-modal h2 {
+            margin-top: 0;
+            color: #3498db;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .options {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .option {
+            padding: 15px;
+            background: linear-gradient(to right, #3498db, #1abc9c);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .option:hover {
+            background: linear-gradient(to right, #2980b9, #16a085);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            background: #1d2d50;
+            padding: 15px;
+            text-align: center;
+            color: #fff;
+            font-size: 16px;
+            border-top: 2px solid #3498db;
+        }
+        
+        .controls p {
+            margin: 5px 0;
+        }
+        
+        .knowledge-effect {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(46, 204, 113, 0.7);
+            border-radius: 50%;
+            display: none;
+            pointer-events: none;
+            z-index: 15;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            display: none;
+            z-index: 30;
+        }
+        
+        .game-over h2 {
+            font-size: 48px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(to right, #3498db, #1abc9c);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:hover {
+            background: linear-gradient(to right, #2980b9, #16a085);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 27, 42, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 25;
+        }
+        
+        .start-screen h1 {
+            font-size: 42px;
+            color: #3498db;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
+        }
+        
+        .start-screen p {
+            color: #fff;
+            font-size: 18px;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .start-screen .btn {
+            font-size: 20px;
+            padding: 15px 40px;
+        }
+        
+        .invader-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .subject-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            background: linear-gradient(135deg, #9b59b6, #3498db);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .subject-icon:hover {
+            transform: scale(1.1);
+        }
+        
+        .subject-info {
+            color: #fff;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score-container">
+                <div class="score-label">SCORE</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            <div class="lives-container">
+                <div class="lives-label">LIVES</div>
+                <div class="lives-value" id="lives">3</div>
+            </div>
+            <div class="level-container">
+                <div class="level-label">LEVEL</div>
+                <div class="level-value" id="level">1</div>
+            </div>
+        </div>
+        
+        <div class="game-screen">
+            <div id="player"></div>
+            <div id="bullet"></div>
+            <div class="knowledge-effect" id="effect"></div>
+            
+            <div class="start-screen" id="startScreen">
+                <h1>KNOWLEDGE INVADERS</h1>
+                <p>Defend your mind from ignorance! Shoot the knowledge invaders to answer questions and gain points. Each subject area gives different knowledge rewards.</p>
+                <div class="invader-grid">
+                    <div>
+                        <div class="subject-icon">🤖</div>
+                        <div class="subject-info">Technology</div>
+                    </div>
+                    <div>
+                        <div class="subject-icon">🧬</div>
+                        <div class="subject-info">Science</div>
+                    </div>
+                    <div>
+                        <div class="subject-icon">🎨</div>
+                        <div class="subject-info">Arts</div>
+                    </div>
+                    <div>
+                        <div class="subject-icon">📚</div>
+                        <div class="subject-info">Literature</div>
+                    </div>
+                    <div>
+                        <div class="subject-icon">🌍</div>
+                        <div class="subject-info">Geography</div>
+                    </div>
+                    <div>
+                        <div class="subject-icon">🧠</div>
+                        <div class="subject-info">General</div>
+                    </div>
+                </div>
+                <button class="btn" id="startButton">START GAME</button>
+            </div>
+            
+            <div class="question-modal" id="questionModal">
+                <h2 id="questionText">Question</h2>
+                <div class="options" id="optionsContainer">
+                    <!-- Options will be generated here -->
+                </div>
+            </div>
+            
+            <div class="game-over" id="gameOver">
+                <h2>GAME OVER</h2>
+                <p>Your final score: <span id="finalScore">0</span></p>
+                <button class="btn" id="restartButton">PLAY AGAIN</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <p>Controls: ← → to move, SPACE to shoot</p>
+            <p>Shoot knowledge invaders to earn points!</p>
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const gameContainer = document.querySelector('.game-container');
+        const gameScreen = document.querySelector('.game-screen');
+        const player = document.getElementById('player');
+        const bullet = document.getElementById('bullet');
+        const questionModal = document.getElementById('questionModal');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const levelDisplay = document.getElementById('level');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const effect = document.getElementById('effect');
+        const startScreen = document.getElementById('startScreen');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        
+        // Game state
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let playerX = 375;
+        let bulletX = 0;
+        let bulletY = 0;
+        let bulletActive = false;
+        let invaders = [];
+        let currentQuestion = null;
+        let gameRunning = false;
+        let invaderMoveDirection = 1;
+        let invaderMoveDown = false;
+        let invaderSpeed = 1;
+        
+        // Knowledge questions database
+        const questions = [
+            {
+                subject: "technology",
+                question: "What does HTML stand for?",
+                options: ["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlink and Text Markup Language"],
+                correct: 0
+            },
+            {
+                subject: "technology",
+                question: "Which company developed the JavaScript programming language?",
+                options: ["Microsoft", "Netscape", "Sun Microsystems", "Apple"],
+                correct: 1
+            },
+            {
+                subject: "science",
+                question: "What is the chemical symbol for gold?",
+                options: ["Go", "Gd", "Au", "Ag"],
+                correct: 2
+            },
+            {
+                subject: "science",
+                question: "Which planet is known as the Red Planet?",
+                options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                correct: 1
+            },
+            {
+                subject: "arts",
+                question: "Who painted the Mona Lisa?",
+                options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Michelangelo"],
+                correct: 2
+            },
+            {
+                subject: "arts",
+                question: "Which musical instrument has 88 keys?",
+                options: ["Violin", "Piano", "Guitar", "Drums"],
+                correct: 1
+            },
+            {
+                subject: "literature",
+                question: "Who wrote 'To Kill a Mockingbird'?",
+                options: ["Harper Lee", "Mark Twain", "Ernest Hemingway", "F. Scott Fitzgerald"],
+                correct: 0
+            },
+            {
+                subject: "literature",
+                question: "In which novel would you find the character 'Atticus Finch'?",
+                options: ["The Great Gatsby", "1984", "To Kill a Mockingbird", "Pride and Prejudice"],
+                correct: 2
+            },
+            {
+                subject: "geography",
+                question: "What is the capital of Canada?",
+                options: ["Toronto", "Vancouver", "Ottawa", "Montreal"],
+                correct: 2
+            },
+            {
+                subject: "geography",
+                question: "Which is the longest river in the world?",
+                options: ["Amazon River", "Nile River", "Mississippi River", "Yangtze River"],
+                correct: 1
+            },
+            {
+                subject: "general",
+                question: "How many bones are in the human body?",
+                options: ["206", "300", "150", "187"],
+                correct: 0
+            },
+            {
+                subject: "general",
+                question: "Which ocean is the largest?",
+                options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
+                correct: 3
+            }
+        ];
+        
+        // Subject icons mapping
+        const subjectIcons = {
+            "technology": "🤖",
+            "science": "🧬",
+            "arts": "🎨",
+            "literature": "📚",
+            "geography": "🌍",
+            "general": "🧠"
+        };
+        
+        // Initialize game
+        function initGame() {
+            // Reset state
+            score = 0;
+            lives = 3;
+            level = 1;
+            playerX = 375;
+            bulletActive = false;
+            invaderMoveDirection = 1;
+            invaderSpeed = 1;
+            
+            // Clear existing invaders
+            invaders.forEach(invader => invader.remove());
+            invaders = [];
+            
+            // Reset displays
+            updateInfo();
+            player.style.left = `${playerX}px`;
+            bullet.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            // Create invaders
+            createInvaders();
+            
+            // Start game loop
+            gameRunning = true;
+            gameLoop();
+        }
+        
+        // Create knowledge invaders
+        function createInvaders() {
+            const invadersContainer = document.createElement('div');
+            invadersContainer.id = 'invadersContainer';
+            gameScreen.appendChild(invadersContainer);
+            
+            const rows = 3;
+            const cols = 6;
+            const paddingX = 20;
+            const paddingY = 20;
+            const invaderWidth = 60;
+            const invaderHeight = 60;
+            
+            // Get questions for current level
+            const levelQuestions = questions.filter(q => q.subject !== "general");
+            const generalQuestions = questions.filter(q => q.subject === "general");
+            
+            // Create invaders for each subject
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const invader = document.createElement('div');
+                    invader.className = 'knowledge-invader';
+                    
+                    // Position invaders
+                    const x = col * (invaderWidth + paddingX) + 50;
+                    const y = row * (invaderHeight + paddingY) + 50;
+                    invader.style.left = `${x}px`;
+                    invader.style.top = `${y}px`;
+                    
+                    // Select subject (alternating)
+                    const subjects = Object.keys(subjectIcons);
+                    const subjectIndex = (row * cols + col) % subjects.length;
+                    const subject = subjects[subjectIndex];
+                    
+                    // Set icon
+                    invader.textContent = subjectIcons[subject];
+                    invader.dataset.subject = subject;
+                    
+                    // Select random question from subject
+                    const subjectQuestions = questions.filter(q => q.subject === subject);
+                    if (subjectQuestions.length > 0) {
+                        const randomQuestion = subjectQuestions[Math.floor(Math.random() * subjectQuestions.length)];
+                        invader.dataset.question = JSON.stringify(randomQuestion);
+                    } else {
+                        invader.dataset.question = JSON.stringify(generalQuestions[Math.floor(Math.random() * generalQuestions.length)]);
+                    }
+                    
+                    invadersContainer.appendChild(invader);
+                    invaders.push({
+                        element: invader,
+                        x: x,
+                        y: y,
+                        width: invaderWidth,
+                        height: invaderHeight
+                    });
+                }
+            }
+        }
+        
+        // Move player
+        function movePlayer(direction) {
+            if (!gameRunning) return;
+            
+            if (direction === 'left' && playerX > 10) {
+                playerX -= 20;
+            } else if (direction === 'right' && playerX < 740) {
+                playerX += 20;
+            }
+            player.style.left = `${playerX}px`;
+        }
+        
+        // Shoot bullet
+		function shoot() {
+			if (!gameRunning || bulletActive) return;
+			
+			bulletActive = true;
+			bulletX = playerX + 22;
+			bulletY = 470;  // This is the initial Y position from the top
+			bullet.style.left = `${bulletX}px`;
+			bullet.style.top = `${bulletY}px`;  // Changed from bottom to top
+			bullet.style.display = 'block';
+		}
+        
+        // Move bullet
+        function moveBullet() {
+			if (!bulletActive) return;
+			
+			bulletY -= 10;  // Changed from += to -= since we're using top now
+			bullet.style.top = `${bulletY}px`;
+			
+			// Check if bullet is off screen (top of screen)
+			if (bulletY < 0) {
+				bulletActive = false;
+				bullet.style.display = 'none';
+				return;
+			}
+			
+			// Check collision with invaders
+			for (let i = 0; i < invaders.length; i++) {
+				const invader = invaders[i];
+				if (isColliding(bullet, invader.element)) {
+					bulletActive = false;
+					bullet.style.display = 'none';
+					
+					// Show question modal
+					const questionData = JSON.parse(invader.element.dataset.question);
+					showQuestion(questionData, invader);
+					return;
+				}
+			}
+		}
+        
+        // Move invaders
+        function moveInvaders() {
+            if (!gameRunning || invaders.length === 0) return;
+            
+            let moveDown = false;
+            
+            // Check if any invader hits the edge
+            for (let i = 0; i < invaders.length; i++) {
+                const invader = invaders[i];
+                if ((invader.x <= 10 && invaderMoveDirection === -1) || 
+                    (invader.x >= 730 && invaderMoveDirection === 1)) {
+                    moveDown = true;
+                    break;
+                }
+            }
+            
+            // Move invaders down if needed
+            if (moveDown) {
+                invaderMoveDown = true;
+                invaderMoveDirection *= -1;
+            }
+            
+            // Update invader positions
+            invaders.forEach(invader => {
+                if (invaderMoveDown) {
+                    invader.y += 20;
+                    invader.element.style.top = `${invader.y}px`;
+                } else {
+                    invader.x += invaderMoveDirection * invaderSpeed;
+                    invader.element.style.left = `${invader.x}px`;
+                }
+                
+                // Check if invader reached the bottom
+                if (invader.y > 400) {
+                    gameOver();
+                }
+            });
+            
+            // Reset move down flag
+            if (invaderMoveDown) {
+                invaderMoveDown = false;
+            }
+        }
+        
+        // Check collision between two elements
+        function isColliding(el1, el2) {
+            const rect1 = el1.getBoundingClientRect();
+            const rect2 = el2.getBoundingClientRect();
+            const containerRect = gameScreen.getBoundingClientRect();
+            
+            // Adjust positions relative to container
+            const left1 = rect1.left - containerRect.left;
+            const right1 = rect1.right - containerRect.left;
+            const top1 = rect1.top - containerRect.top;
+            const bottom1 = rect1.bottom - containerRect.top;
+            
+            const left2 = rect2.left - containerRect.left;
+            const right2 = rect2.right - containerRect.left;
+            const top2 = rect2.top - containerRect.top;
+            const bottom2 = rect2.bottom - containerRect.top;
+            
+            return (
+                left1 < right2 &&
+                right1 > left2 &&
+                top1 < bottom2 &&
+                bottom1 > top2
+            );
+        }
+        
+        // Show question modal
+        function showQuestion(questionData, invaderObj) {
+            currentQuestion = {
+                data: questionData,
+                invader: invaderObj
+            };
+            
+            questionText.textContent = questionData.question;
+            optionsContainer.innerHTML = '';
+            
+            questionData.options.forEach((option, index) => {
+                const optionBtn = document.createElement('button');
+                optionBtn.className = 'option';
+                optionBtn.textContent = option;
+                optionBtn.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(optionBtn);
+            });
+            
+            questionModal.style.display = 'block';
+            gameRunning = false;
+        }
+        
+        // Check answer
+		function checkAnswer(selectedIndex) {
+			questionModal.style.display = 'none';
+			const isCorrect = selectedIndex === currentQuestion.data.correct;
+			
+			if (isCorrect) {
+				// Show effect
+				showEffect(currentQuestion.invader.element);
+				// Remove invader
+				currentQuestion.invader.element.remove();
+				invaders = invaders.filter(inv => inv !== currentQuestion.invader);
+				
+				// Update score
+				score += 100 * level;
+				
+				// Level up if all invaders destroyed
+				if (invaders.length === 0) {
+					levelUp();
+					return; // levelUp will handle game state
+				}
+			} else {
+				lives--;
+				updateInfo();
+				if (lives <= 0) {
+					gameOver();
+					return;
+				}
+			}
+			
+			currentQuestion = null;
+			updateInfo();
+			
+			// Resume game and restart game loop
+			gameRunning = true;
+			gameLoop(); // This is the key line we need to add
+		}
+        
+        // Show knowledge effect
+        function showEffect(invaderElement) {
+            const rect = invaderElement.getBoundingClientRect();
+            const containerRect = gameScreen.getBoundingClientRect();
+            
+            effect.style.left = `${rect.left - containerRect.left - 20}px`;
+            effect.style.top = `${rect.top - containerRect.top - 20}px`;
+            effect.style.display = 'block';
+            
+            setTimeout(() => {
+                effect.style.display = 'none';
+            }, 500);
+        }
+        
+        // Level up
+		function levelUp() {
+			level++;
+			invaderSpeed += 0.2;
+			updateInfo();
+			
+			// Create new invaders after a delay
+			setTimeout(() => {
+				createInvaders();
+				gameRunning = true;
+				gameLoop(); // Restart the game loop
+			}, 1500);
+		}
+        
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // Update game info
+        function updateInfo() {
+            scoreDisplay.textContent = score;
+            livesDisplay.textContent = lives;
+            levelDisplay.textContent = level;
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            moveBullet();
+            moveInvaders();
+            
+            // Continue the game loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') movePlayer('left');
+            if (e.key === 'ArrowRight') movePlayer('right');
+            if (e.key === ' ' || e.key === 'Spacebar') shoot();
+        });
+        
+        // Start button
+        startButton.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            initGame();
+        });
+        
+        // Restart button
+        restartButton.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            initGame();
+        });
+        
+        // Hide start screen for demo purposes
+        setTimeout(() => {
+            startScreen.style.display = 'none';
+            initGame();
+        }, 3000);
+    </script>
+</body>
+</html>
